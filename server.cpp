@@ -80,20 +80,18 @@ public:
             guessOrder = 0;
             currentRound++;
             if(currentRound == maxRound + 1) // game end
-            {
                 isEnded = true;
-
-            }
         }
-
         return to_string(Anumber) + "A" + to_string(Bnumber) + "B";
-
+    }
+    void QuitGame(){
     }
     int getCurrentPlayer(){
         return players[guessOrder];
     }
-    bool isEnded = false;
+    //bool isEnded = false;
     vector<int> players;
+    bool isEnded = false;
 private:
     int maxRound = 0;
     int currentRound = 0;
@@ -134,13 +132,13 @@ public:
         game = new Game();
     }
     ~GameRoom(){
+        QuitGame();
         isPublic = false;
         isInGame = false;
         GameRoomId = "";
         GameManager = -1;
         invitationCode = "";
         players.clear();
-        QuitGame();
         //game = new Game();
     }
     void StartGame(string round, string targetNumber = ""){
@@ -149,6 +147,8 @@ public:
     }
     void QuitGame(){
         isInGame = false;
+        delete(game);
+        game = new Game();
     }
     Game* game;
 private:
@@ -710,12 +710,15 @@ private:
             return;
         }
         string result = room->game->Guess(cmds[1]);
-        if(room->game->isEnded && result == "Bingo")
-            masterTCPSocket->Broadcast(players[clientIndex].name + " guess \'" + cmds[1] + "\' and got " + result + "!!!" + players[clientIndex].name + " wins the game, game ends", room->game->players);
-        else if(room->game->isEnded)
-            masterTCPSocket->Broadcast(players[clientIndex].name + " guess \'" + cmds[1] + "\' and got \'" + result + "\'\nGame ends, no one wins", room->game->players);
-        else
-            masterTCPSocket->Broadcast(players[clientIndex].name + " guess \'" + cmds[1] + "\' and got \'" + result + "\'", room->game->players);    
+        if(!room->game->isEnded)
+            masterTCPSocket->Broadcast(players[clientIndex].name + " guess \'" + cmds[1] + "\' and got \'" + result + "\'", room->game->players);
+        else{
+            if(result == "Bingo")
+                masterTCPSocket->Broadcast(players[clientIndex].name + " guess \'" + cmds[1] + "\' and got " + result + "!!!" + players[clientIndex].name + " wins the game, game ends", room->game->players);
+            else
+                masterTCPSocket->Broadcast(players[clientIndex].name + " guess \'" + cmds[1] + "\' and got \'" + result + "\'\nGame ends, no one wins", room->game->players);
+            room->QuitGame();
+        }
     }
     void LeaveRoom(int clientIndex){
         if(players[clientIndex].name == "")
