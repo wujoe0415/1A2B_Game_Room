@@ -316,13 +316,13 @@ public:
             {  
                 int newSocket = masterTCPSocket->Accept();
                 
-                cout << "New connection.\n";
-                string welcome_mes = "*****Welcome to Game 1A2B*****";
-                //send new connection greeting message 
-                if( send(newSocket, welcome_mes.c_str(), welcome_mes.size(), 0) != welcome_mes.size())  
-                {  
-                    perror("Failed to send welcome meassage\n");  
-                }  
+                // cout << "New connection.\n";
+                // string welcome_mes = "*****Welcome to Game 1A2B*****";
+                // // //send new connection greeting message 
+                // if( send(newSocket, welcome_mes.c_str(), welcome_mes.size(), 0) != welcome_mes.size())  
+                // {  
+                //     perror("Failed to send welcome meassage\n");  
+                // }  
                 // Add new socket to array of sockets 
                 //AddTCPClient(newSocket); 
             }
@@ -369,6 +369,8 @@ public:
                 Invite(cmds, tcpNum);
             else if(cmds[0] == "list" && cmds[1] == "invitations")
                 ListInvitations(tcpNum);
+            else if(cmds[0] == "accept")
+                AcceptInvitation(cmds, tcpNum);
             else if(cmds[0] == "leave" && cmds[1] == "room")
                 LeaveRoom(tcpNum);
             else if(cmds[0] == "start" && cmds[1] == "game")
@@ -459,7 +461,7 @@ private:
 			return;
 		}
 		if(user2data.find(cmds[1]) == user2data.end()) {
-			masterTCPSocket->SendMessage("Username not found", clientIndex);
+			masterTCPSocket->SendMessage("Username does not exist", clientIndex);
 			return;
 		}
 		if(user2data[cmds[1]].second != cmds[2]) {
@@ -467,7 +469,7 @@ private:
 			return;
 		}
         if(players[clientIndex].name != "") {
-			masterTCPSocket->SendMessage("You already logged in as " + cmds[1], clientIndex);
+			masterTCPSocket->SendMessage("You already logged in as " + players[clientIndex].name, clientIndex);
 			return;
 		}
         for(int i = 0;i < MAX_CLIENT ; i++){
@@ -483,6 +485,7 @@ private:
     void Logout(int clientIndex){
         if(players[clientIndex].name == "") {
 			masterTCPSocket->SendMessage("You are not logged in", clientIndex);
+            return;
 		}
         if(players[clientIndex].inRoomId != "")
             masterTCPSocket->SendMessage("You are already in game room "+ players[clientIndex].inRoomId + ", please leave game room", clientIndex);
