@@ -349,9 +349,9 @@ public:
                 Register(cmds);
             else if(cmds[0] == "game-rule")
                 GameRule();
-            else if(cmds[0] == "list" && cmds[0] == "rooms")
+            else if(cmds[0] == "list" && cmds[1] == "rooms")
                 ListRooms();
-            else if(cmds[0] == "list" && cmds[0] == "users")
+            else if(cmds[0] == "list" && cmds[1] == "users")
                 ListUsers();
             else
                 uProtocol.SendMessage("Not a valid command.");
@@ -364,7 +364,7 @@ public:
             else if(cmds[0] == "create" && cmds[1] == "public" && cmds[2] == "room")
                 CreatePublicRoom(cmds, tcpNum);
             else if(cmds[0] == "create" && cmds[1] == "private" && cmds[2] == "room")
-                CreatePublicRoom(cmds, tcpNum);
+                CreatePrivateRoom(cmds, tcpNum);
             else if(cmds[0] == "invite")
                 Invite(cmds, tcpNum);
             else if(cmds[0] == "list" && cmds[1] == "invitations")
@@ -419,24 +419,28 @@ private:
         uProtocol.SendMessage("1. Each question is a 4-digit secret number.\n2. After each guess, you will get a hint with the following information:\n2.1 The number of \"A\", which are digits in the guess that are in the correct position.\n2.2 The number of \"B\", which are digits in the guess that are in the answer but are in the wrong position.\nThe hint will be formatted as \"xAyB\".\n3. 5 chances for each question.");
     }
     void ListRooms(){
+        if(rooms.size() == 0)
+        {
+            uProtocol.SendMessage("No Rooms");
+            return;
+        }
         string roomList = "";
         for(auto it = rooms.begin(); it != rooms.end(); it++){
             if(it->second->GameRoomId != ""){
                 auto room = it->second;
                 if(room->isPublic && room->isInGame)
-                    roomList += "\n(Public) Game Room " + it->first+ " has started playing";
+                    roomList += "(Public) Game Room " + it->first+ " has started playing\n";
                 else if(room->isPublic && !room->isInGame)
-                    roomList += "\n(Public) Game Room " + it->first+ " is open for players";
+                    roomList += "(Public) Game Room " + it->first+ " is open for players\n";
                 else if(!room->isPublic && room->isInGame)
-                    roomList += "\n(Private) Game Room " + it->first+ " has started playing";
+                    roomList += "(Private) Game Room " + it->first+ " has started playing\n";
                 else    
-                    roomList += "\n(Private) Game Room " + it->first+ " is open for players";
+                    roomList += "(Private) Game Room " + it->first+ " is open for players\n";
             }
         }
-        if(rooms.size() != 0)
-            uProtocol.SendMessage(roomList);
-        else
-            uProtocol.SendMessage("No Rooms");
+        roomList[roomList.size() - 1] = '\0';
+        uProtocol.SendMessage(roomList);
+        
     }
     void ListUsers(){
         string userList = "";
@@ -445,13 +449,15 @@ private:
             if(player.name != ""){
                 count++;
                 if(player.isOnline)
-                    userList += "\n" + to_string(count) + ".\n" + player.name + "<" + player.email + "> Online"; 
+                    userList += to_string(count) + ".\n" + player.name + "<" + player.email + "> Online\n"; 
                 else    
-                    userList += "\n" + to_string(count) + ".\n" + player.name + "<" + player.email + "> Offline";
+                    userList += to_string(count) + ".\n" + player.name + "<" + player.email + "> Offline\n";
             }
         }
-        if(userList != "")
+        if(userList != ""){
+            userList[userList.size() - 1] = '\0';
             uProtocol.SendMessage(userList);
+        }
         else
             uProtocol.SendMessage("No Users");
     }
@@ -499,7 +505,7 @@ private:
             masterTCPSocket->SendMessage("You are not logged in", clientIndex);
             return;
         }
-        if(players[clientIndex].isInGame){
+        if(players[clientIndex].inRoomId != ""){
             masterTCPSocket->SendMessage("You are already in game room " + players[clientIndex].inRoomId + ", please leave game room", clientIndex);
             return;
         }
@@ -508,17 +514,23 @@ private:
             masterTCPSocket->SendMessage("Game room ID is used, choose another one", clientIndex);
             return;
         }
-        rooms[cmds[3]] = new GameRoom(true, cmds[3], clientIndex, cmds[4]);
+        rooms[cmds[3]] = new GameRoom(true, cmds[3], clientIndex);
         rooms[cmds[3]]->players.push_back(clientIndex);
+        players[clientIndex].inRoomId = cmds[3];
         masterTCPSocket->SendMessage("You create public game room " + cmds[3], clientIndex);
 
     }
     void CreatePrivateRoom(vector<string> cmds, int clientIndex){
+        if(cmds.size() != 5)
+        {
+            masterTCPSocket->SendMessage("Wrong Input", clientIndex);
+            return;
+        }
         if(players[clientIndex].name == ""){
             masterTCPSocket->SendMessage("You are not logged in", clientIndex);
             return;
         }
-        if(players[clientIndex].isInGame){
+        if(players[clientIndex].inRoomId != ""){
             masterTCPSocket->SendMessage("You are already in game room " + players[clientIndex].inRoomId + ", please leave game room", clientIndex);
             return;
         }
@@ -527,8 +539,9 @@ private:
             masterTCPSocket->SendMessage("Game room ID is used, choose another one", clientIndex);
             return;
         }
-        rooms[cmds[3]] = new GameRoom(true, cmds[3], clientIndex, cmds[4]);
+        rooms[cmds[3]] = new GameRoom(false, cmds[3], clientIndex, cmds[4]);
         rooms[cmds[3]]->players.push_back(clientIndex);
+        players[clientIndex].inRoomId = cmds[3];
         masterTCPSocket->SendMessage("You create private game room " + cmds[3], clientIndex);
     }
     void JoinRoom(vector<string> cmds, int clientIndex){
@@ -558,6 +571,7 @@ private:
         for(const auto player : rooms[cmds[2]]->players)
             masterTCPSocket->SendMessage("Welcome, " + players[clientIndex].name + " to game!", player);
         
+        players[clientIndex].inRoomId = cmds[2];
         masterTCPSocket->SendMessage("You join game room " + cmds[2], clientIndex);
         rooms[cmds[2]]->players.push_back(clientIndex);
     }
@@ -656,6 +670,7 @@ private:
         masterTCPSocket->Broadcast("Welcome, " + players[clientIndex].name + " to game!", rooms[cmds[2]]->players);
         masterTCPSocket->SendMessage("You join game room " + cmds[2], clientIndex);
         rooms[cmds[2]]->players.push_back(clientIndex);
+        players[clientIndex].inRoomId = cmds[2];
     }
     void StartGame(vector<string> cmds, int clientIndex){
         if(players[clientIndex].name == "") {
@@ -735,30 +750,37 @@ private:
             masterTCPSocket->SendMessage("You did not join any game room", clientIndex);
             return;
         }
+        
         auto room = rooms[players[clientIndex].inRoomId];
+        if(find(room->players.begin(), room->players.end(), clientIndex) == room->players.end()){
+                cout<<"Can't find player\n";
+                return;
+            }
+        room->players.erase(find(room->players.begin(), room->players.end(), clientIndex));
+        
         if(room->GameManager == clientIndex){
             masterTCPSocket->SendMessage("You leave game room " + players[clientIndex].inRoomId , clientIndex);
-            for(int player : room->players)
+            rooms.erase(players[clientIndex].inRoomId);
+            players[clientIndex].inRoomId = "";
+            for(int player : room->players){
                 masterTCPSocket->SendMessage("Game room manager leave game room " + players[clientIndex].inRoomId + ", you are forced to leave too", player);
+                players[clientIndex].inRoomId = "";
+            }
             delete(room);
             return;
         }
         else{
-            if(find(room->players.begin(), room->players.end(), clientIndex) == room->players.end()){
-                cout<<"Can't find player\n";
-                return;
-            }
             if(room->isInGame){
-                room->players.erase(find(room->players.begin(), room->players.end(), clientIndex));
                 masterTCPSocket->SendMessage("You leave game room " + players[clientIndex].inRoomId + ", game end", clientIndex);
                 for(int player : room->players)
                     masterTCPSocket->SendMessage(players->name + " leave game room " + players->inRoomId + ", game ends", player);
+
                 room->QuitGame();
                 return;
             }
             else{
-                room->players.erase(find(room->players.begin(), room->players.end(), clientIndex));
                 masterTCPSocket->SendMessage("You leave game room " + players[clientIndex].inRoomId, clientIndex);
+                players[clientIndex].inRoomId = "";
                 for(int player : room->players)
                     masterTCPSocket->SendMessage(players->name + " leave game room " + players->inRoomId, player);
                 return;

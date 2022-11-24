@@ -104,13 +104,12 @@ int main(int argc, char** argv) {
 			}
 			tmp += command[i];
 		}
-
 		if(tmp == "exit") {
 			udp.Close();
 			tcp.Close();
 			break;
 		}
-		else if(tmp == "register" || tmp == "game-rule") 
+		else if(tmp == "register" || tmp == "game-rule" || tmp == "list") 
 		{
 			udp.SendMessage(command);
 			udp.ReceiveMessage();
