@@ -51,9 +51,8 @@ public:
     string Guess(string number){
         int Anumber = 0, Bnumber = 0;
         bool visited[4] = {0};
-        for(int i = 0;i<4;i++)
+        for(int i = 0;i < 4;i++)
             visited[i] = false;
-
         for(int i = 0;i<4;i++){
             if(targetNumber[i] == number[i]){
                 visited[i] = true;
@@ -65,6 +64,8 @@ public:
             return "Bingo";
         }
         for(int i = 0 ; i < 4 ; i++){
+            if(visited[i])
+                continue;
             for(int j = 0 ; j < 4 ; j++){
                 if(i == j)
                     continue;
