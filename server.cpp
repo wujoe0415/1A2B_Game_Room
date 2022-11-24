@@ -367,7 +367,7 @@ public:
             else if(cmds[0] == "invite")
                 Invite(cmds, tcpNum);
             else if(cmds[0] == "list" && cmds[1] == "invitations")
-                ListInvitations();
+                ListInvitations(tcpNum);
             else if(cmds[0] == "leave" && cmds[1] == "room")
                 LeaveRoom(tcpNum);
             else if(cmds[0] == "start" && cmds[1] == "game")
@@ -591,7 +591,21 @@ private:
         }
     }
     void ListInvitations(int clientIndex){
-
+        if(players[clientIndex].name == "") {
+			masterTCPSocket->SendMessage("You are not logged in", clientIndex);
+			return;
+		}
+        if(players[clientIndex].invitation.size() == 0){
+            masterTCPSocket->SendMessage("No Invitations", clientIndex);
+            return;
+        }
+        for(auto it = players[clientIndex].invitation.begin() ; it != players[clientIndex].invitation.end() ; it++){
+            masterTCPSocket->SendMessage(
+                players[it->second].name + "<" + players[it->second].email + "> invite you to join game room " + 
+                players[it->second].inRoomId + ", invitation code is " + rooms[players[it->second].inRoomId]->invitationCode, 
+                clientIndex);
+        }
+        
     }
     void AcceptInvitation(vector<string> cmds, int clientIndex){
         string email = cmds[1];
@@ -604,28 +618,40 @@ private:
             masterTCPSocket->SendMessage("You are already in game room" +  players[clientIndex].inRoomId + ", please leave game room", clientIndex);
             return;
         }
-        // error
-        if(rooms.find(cmds[2]) == rooms.end()){
-            masterTCPSocket->SendMessage("Invitation not exist", clientIndex);
-            return;
+        bool isInvitationValid = false;
+        for(auto it = players[clientIndex].invitation.begin(); it != players[clientIndex].invitation.end() ; it++)
+        {
+            if(players[it->second].email == email && players[it->second].inRoomId == it->first)
+            {
+                isInvitationValid = true;
+                break;
+            }
         }
-        //error
-        if(rooms.find(cmds[2])->second->invitationCode != cmds[2])
+        if(!isInvitationValid){
+            masterTCPSocket->SendMessage("Invitation not exist", clientIndex);
+        }
+        GameRoom* room = nullptr;
+        for(auto it = rooms.begin() ; it!= rooms.end(); it++)
+        {
+            if(it->second->invitationCode == code){
+                room = it->second;
+                break;
+            }
+        }
+        if(!room)
         {
             masterTCPSocket->SendMessage("Your invitation code is incorrect", clientIndex);
             return;
         }
-        if(rooms.find(cmds[2])->second->isInGame)
+        if(room->isInGame)
         {
             masterTCPSocket->SendMessage("Game has started, you can't join now", clientIndex);
             return;
         }    
 
-        for(const auto player : rooms[cmds[2]]->players)
-            masterTCPSocket->SendMessage("Welcome, " + players[clientIndex].name + " to game!", player);
-        
-        rooms[cmds[2]]->players.push_back(clientIndex);
+        masterTCPSocket->Broadcast("Welcome, " + players[clientIndex].name + " to game!", rooms[cmds[2]]->players);
         masterTCPSocket->SendMessage("You join game room " + cmds[2], clientIndex);
+        rooms[cmds[2]]->players.push_back(clientIndex);
     }
     void StartGame(vector<string> cmds, int clientIndex){
         if(players[clientIndex].name == "") {
