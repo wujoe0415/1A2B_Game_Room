@@ -72,11 +72,9 @@ private:
 };
 
 int main(int argc, char** argv) {
-	if (argc < 3) {
-		cout << "Please input the port and IP for client side !!\n";
-		return 0;
-	}
-	int Port = atoi(argv[2]); // extract the port
+	int Port = 8888;
+	if (argc == 3) 
+		Port = atoi(argv[2]);
 	
 	sockaddr_in ClientAddress;
 	ClientAddress.sin_family = AF_INET;
