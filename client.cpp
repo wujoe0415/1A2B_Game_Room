@@ -14,7 +14,7 @@ public:
 	void ReceiveMessage() {
 		int val = read(TCP_fd, buffer, 1024);
 		buffer[val] = '\0';
-		cout<<buffer<<'\n';
+		cout<<buffer;
 	}
 	void SendMessage(string str) {
 		// puts(("TCP sendMessage : " + str).c_str());
