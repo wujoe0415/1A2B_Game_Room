@@ -78,8 +78,8 @@ public:
                 if(i == j)
                     continue;
                 if(!visited[j] && number[i] == targetNumber[j]){
-                    visited[j] = true;
                     Bnumber++;
+                    break;
                 }
             }
         }
@@ -279,7 +279,7 @@ public:
 private:
     struct sockaddr_in* serverAddress={0};
     struct sockaddr_in clientAddress;
-    char buffer[50]={0};
+    char buffer[1024]={0};
     socklen_t len = 0;
 };
 
@@ -626,17 +626,18 @@ private:
 			masterTCPSocket->SendMessage("You are not logged in\n", clientIndex);
 			return;
 		}
+        string mes = "List invitations\n";
         if(players[clientIndex].invitation.size() == 0){
-            masterTCPSocket->SendMessage("No Invitations\n", clientIndex);
+            masterTCPSocket->SendMessage(mes + "No Invitations\n", clientIndex);
             return;
         }
+        int count = 0;
         for(auto it = players[clientIndex].invitation.begin() ; it != players[clientIndex].invitation.end() ; it++){
-            masterTCPSocket->SendMessage(
-                players[it->second].name + "<" + players[it->second].email + "> invite you to join game room " + 
-                players[it->second].inRoomId + ", invitation code is " + rooms[players[it->second].inRoomId]->invitationCode + "\n", 
-                clientIndex);
+            count++;
+            mes += to_string(count) + ". " + players[it->second].name + "<" + players[it->second].email + "> invite you to join game room " + 
+                players[it->second].inRoomId + ", invitation code is " + rooms[players[it->second].inRoomId]->invitationCode + "\n";
         }
-        
+        masterTCPSocket->SendMessage(mes, clientIndex);
     }
     void AcceptInvitation(vector<string> cmds, int clientIndex){
         string email = cmds[1];
@@ -766,9 +767,9 @@ private:
         
         auto room = rooms[players[clientIndex].inRoomId];
         if(find(room->players.begin(), room->players.end(), clientIndex) == room->players.end()){
-                cout<<"Can't find player\n";
+                cout<<"In " + players[clientIndex].inRoomId + "Can't find player\n";
                 return;
-            }
+        }
         room->players.erase(find(room->players.begin(), room->players.end(), clientIndex));
         
         if(room->GameManager == clientIndex){
@@ -776,10 +777,10 @@ private:
             rooms.erase(players[clientIndex].inRoomId);
             for(int player : room->players){
                 masterTCPSocket->SendMessage("Game room manager leave game room " + players[clientIndex].inRoomId + ", you are forced to leave too\n", player);
-                players[clientIndex].inRoomId = "";
+                players[player].inRoomId = "";
             }
+            rooms.erase(players[clientIndex].inRoomId);
             players[clientIndex].inRoomId = "";
-            delete(room);
             return;
         }
         else{

@@ -23,7 +23,7 @@ python3 demo.py
 + guess_sample      
 + leave_room_sample 
 +  
-+ send_invitations_sample 
++ ~~send_invitations_sample~~ 
 + list_invitations_sample      
 + accept_invitation_sample
 + private_room_sample  
