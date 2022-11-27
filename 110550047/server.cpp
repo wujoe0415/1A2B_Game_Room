@@ -746,10 +746,18 @@ private:
         if(!room->game->isEnded)
             masterTCPSocket->Broadcast(players[clientIndex].name + " guess \'" + cmds[1] + "\' and got \'" + result + "\'\n", room->game->players, clientIndex);
         else{
-            if(result == "Bingo")
-                masterTCPSocket->Broadcast(players[clientIndex].name + " guess \'" + cmds[1] + "\' and got " + result + "!!!" + players[clientIndex].name + " wins the game, game ends\n", room->game->players, clientIndex);
-            else
-                masterTCPSocket->Broadcast(players[clientIndex].name + " guess \'" + cmds[1] + "\' and got \'" + result + "\'\nGame ends, no one wins\n", room->game->players, clientIndex);
+            if(result == "Bingo"){
+                string mes = players[clientIndex].name + " guess \'" + cmds[1] + "\' and got " + result + "!!! " + players[clientIndex].name + " wins the game, game ends\n";
+                masterTCPSocket->SendMessage(mes, clientIndex);
+                room->game->players.erase(find(room->game->players.begin(), room->game->players.end(), clientIndex));
+                masterTCPSocket->Broadcast(mes, room->game->players, clientIndex);
+            }
+            else{
+                string mes = players[clientIndex].name + " guess \'" + cmds[1] + "\' and got \'" + result + "\'\nGame ends, no one wins\n";
+                masterTCPSocket->SendMessage(mes, clientIndex);
+                room->game->players.erase(find(room->game->players.begin(), room->game->players.end(), clientIndex));
+                masterTCPSocket->Broadcast(mes, room->game->players, clientIndex);
+            }
             room->QuitGame();
         }
     }
