@@ -13,14 +13,12 @@ using namespace std;
 struct playerInfo{
     string name = "";
     string email = "";
-    bool isInGame = false;
     string inRoomId = "";
     bool isOnline = false;
     map<string, int> invitation; // <roomID, clientID>
     void Init(string _name, string _email){
         name = _name;
         email = _email;
-        isInGame = false;
         inRoomId = "";
         isOnline = true;
         //invitation.clear();
@@ -28,7 +26,6 @@ struct playerInfo{
     void Clear(){
         name = "";
         email = "";
-        isInGame = false;
         inRoomId = "";
         isOnline = false;
         //invitation.clear();
@@ -721,8 +718,6 @@ private:
         }
         room->StartGame(cmds[2], cmds.size() == 4 ?cmds[3]:"");
 		masterTCPSocket->Broadcast("Game start! Current player is " + players[room->game->getCurrentPlayer()].name + "\n", room->game->players, clientIndex);
-
-        players[clientIndex].isInGame = true;
     }
     void Guess(vector<string> cmds, int clientIndex){
         if(players[clientIndex].name == "") {
