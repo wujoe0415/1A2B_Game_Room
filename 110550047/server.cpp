@@ -779,16 +779,16 @@ private:
                 masterTCPSocket->SendMessage("Game room manager leave game room " + players[clientIndex].inRoomId + ", you are forced to leave too\n", player);
                 players[player].inRoomId = "";
             }
-            rooms.erase(players[clientIndex].inRoomId);
             players[clientIndex].inRoomId = "";
             return;
         }
         else{
             if(room->isInGame){
-                masterTCPSocket->SendMessage("You leave game room " + players[clientIndex].inRoomId + ", game end\n", clientIndex);
+                masterTCPSocket->SendMessage("You leave game room " + players[clientIndex].inRoomId + ", game ends\n", clientIndex);
                 for(int player : room->players)
                     masterTCPSocket->SendMessage(players[clientIndex].name + " leave game room " + players->inRoomId + ", game ends\n", player);
-
+                
+                players[clientIndex].inRoomId = "";
                 room->QuitGame();
                 return;
             }
@@ -797,6 +797,7 @@ private:
                 players[clientIndex].inRoomId = "";
                 for(int player : room->players)
                     masterTCPSocket->SendMessage(players[clientIndex].name + " leave game room " + players->inRoomId + "\n", player);
+                players[clientIndex].inRoomId = "";
                 return;
             }
         }
