@@ -20,16 +20,16 @@ python3 demo.py
 + ~~start_game_sample~~
 + ~~join_room_sample~~
 + ~~logout_sample~~
-+ guess_sample      
-+ leave_room_sample 
++ ~~guess_sample~~      
++ ~~leave_room_sample~~
 +  
 + ~~send_invitations_sample~~ 
-+ list_invitations_sample      
-+ accept_invitation_sample
-+ private_room_sample  
++ ~~list_invitations_sample~~      
++ ~~accept_invitation_sample~~
++ ~~private_room_sample~~  
 + 
-+ exit_1_sample
-+ exit_2_sample
++ ~~exit_1_sample~~
++ ~~exit_2_sample~~
 
 Target 2233
 

@@ -261,11 +261,17 @@ public:
         int val;
         if((val = read(configSockfds[clientSocketfd], buffer, sizeof(buffer)))==0){
             //cout<<"TCP exit\n";
-            close(configSockfds[clientSocketfd]);
-            configSockfds[clientSocketfd] = -1;
+            // close(configSockfds[clientSocketfd]);
+            // configSockfds[clientSocketfd] = -1;
+            buffer[val] = 0;
+            return "exit";
         }
         buffer[val] = '\0';
         return buffer;
+    }
+    void Close(int clientSocketfd){
+        close(configSockfds[clientSocketfd]);
+        configSockfds[clientSocketfd] = -1;
     }
     void Close(){
         close(tcpSockfd);
@@ -815,8 +821,21 @@ private:
         }
     }
     void Exit(int clientIndex){
-        LeaveRoom(clientIndex);
-        Logout(clientIndex);
+        if(players[clientIndex].inRoomId != "")
+        {
+            auto room = rooms[players[clientIndex].inRoomId];
+            room->players.erase(find(room->players.begin(), room->players.end(), clientIndex));
+        
+            if(room->GameManager == clientIndex){
+                rooms.erase(players[clientIndex].inRoomId);
+                for(int player : room->players)
+                    players[player].inRoomId = "";
+            }
+            else if(room->isInGame)
+                room->QuitGame();
+        }
+        players[clientIndex].Clear();
+        masterTCPSocket->Close(clientIndex);
     }
     void TCP(){
         //set master socket to allow multiple connections
