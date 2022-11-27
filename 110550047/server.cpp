@@ -23,7 +23,7 @@ struct playerInfo{
         isInGame = false;
         inRoomId = "";
         isOnline = true;
-        invitation.clear();
+        //invitation.clear();
     }
     void Clear(){
         name = "";
@@ -31,7 +31,7 @@ struct playerInfo{
         isInGame = false;
         inRoomId = "";
         isOnline = false;
-        invitation.clear();
+        //invitation.clear();
     }
 };
 class Game{
@@ -627,17 +627,20 @@ private:
 			return;
 		}
         string mes = "List invitations\n";
-        if(players[clientIndex].invitation.size() == 0){
+        int count = 0;
+        for(auto it = players[clientIndex].invitation.begin() ; it != players[clientIndex].invitation.end() ; it++){
+            if(it->first == players[it->second].inRoomId){
+                count++;
+                mes += to_string(count) + ". " + players[it->second].name + "<" + players[it->second].email + "> invite you to join game room " + 
+                    players[it->second].inRoomId + ", invitation code is " + rooms[players[it->second].inRoomId]->invitationCode + "\n";
+            }
+        }
+        if(count == 0){
             masterTCPSocket->SendMessage(mes + "No Invitations\n", clientIndex);
             return;
         }
-        int count = 0;
-        for(auto it = players[clientIndex].invitation.begin() ; it != players[clientIndex].invitation.end() ; it++){
-            count++;
-            mes += to_string(count) + ". " + players[it->second].name + "<" + players[it->second].email + "> invite you to join game room " + 
-                players[it->second].inRoomId + ", invitation code is " + rooms[players[it->second].inRoomId]->invitationCode + "\n";
-        }
-        masterTCPSocket->SendMessage(mes, clientIndex);
+        else
+            masterTCPSocket->SendMessage(mes, clientIndex);
     }
     void AcceptInvitation(vector<string> cmds, int clientIndex){
         string email = cmds[1];
@@ -647,7 +650,7 @@ private:
             return;
         }
         if(players[clientIndex].inRoomId != ""){
-            masterTCPSocket->SendMessage("You are already in game room" +  players[clientIndex].inRoomId + ", please leave game room\n", clientIndex);
+            masterTCPSocket->SendMessage("You are already in game room " +  players[clientIndex].inRoomId + ", please leave game room\n", clientIndex);
             return;
         }
         bool isInvitationValid = false;
@@ -661,6 +664,7 @@ private:
         }
         if(!isInvitationValid){
             masterTCPSocket->SendMessage("Invitation not exist\n", clientIndex);
+            return;
         }
         GameRoom* room = nullptr;
         for(auto it = rooms.begin() ; it!= rooms.end(); it++)
@@ -681,10 +685,10 @@ private:
             return;
         }    
 
-        masterTCPSocket->Broadcast("Welcome, " + players[clientIndex].name + " to game!\n", rooms[cmds[2]]->players, clientIndex);
-        masterTCPSocket->SendMessage("You join game room " + cmds[2] + "\n", clientIndex);
-        rooms[cmds[2]]->players.push_back(clientIndex);
-        players[clientIndex].inRoomId = cmds[2];
+        masterTCPSocket->Broadcast("Welcome, " + players[clientIndex].name + " to game!\n", room->players, clientIndex);
+        masterTCPSocket->SendMessage("You join game room " + room->GameRoomId + "\n", clientIndex);
+        room->players.push_back(clientIndex);
+        players[clientIndex].inRoomId = room->GameRoomId;
     }
     void StartGame(vector<string> cmds, int clientIndex){
         if(players[clientIndex].name == "") {
@@ -794,7 +798,7 @@ private:
             if(room->isInGame){
                 masterTCPSocket->SendMessage("You leave game room " + players[clientIndex].inRoomId + ", game ends\n", clientIndex);
                 for(int player : room->players)
-                    masterTCPSocket->SendMessage(players[clientIndex].name + " leave game room " + players->inRoomId + ", game ends\n", player);
+                    masterTCPSocket->SendMessage(players[clientIndex].name + " leave game room " + players[clientIndex].inRoomId + ", game ends\n", player);
                 
                 players[clientIndex].inRoomId = "";
                 room->QuitGame();
@@ -802,9 +806,9 @@ private:
             }
             else{
                 masterTCPSocket->SendMessage("You leave game room " + players[clientIndex].inRoomId + "\n", clientIndex);
-                players[clientIndex].inRoomId = "";
                 for(int player : room->players)
-                    masterTCPSocket->SendMessage(players[clientIndex].name + " leave game room " + players->inRoomId + "\n", player);
+                    masterTCPSocket->SendMessage(players[clientIndex].name + " leave game room " + players[clientIndex].inRoomId + "\n", player);
+                
                 players[clientIndex].inRoomId = "";
                 return;
             }
