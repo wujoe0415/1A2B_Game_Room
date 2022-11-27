@@ -604,7 +604,7 @@ private:
             masterTCPSocket->SendMessage("You did not join any game room\n", clientIndex);
             return;
         }
-        if(rooms[players[clientIndex].inRoomId]->GameManager != clientIndex && !rooms[players[clientIndex].inRoomId]->isPublic)
+        if(rooms[players[clientIndex].inRoomId]->GameManager != clientIndex && rooms[players[clientIndex].inRoomId]->isPublic)
         {
             masterTCPSocket->SendMessage("You are not private game room manager\n", clientIndex);
             return;
@@ -612,20 +612,14 @@ private:
         for(int i = 0 ; i < MAX_CLIENT ; i++){
             if(players[i].email == cmds[1])
             {
-                if(players[i].isOnline)
-                {
-                    masterTCPSocket->SendMessage("You send invitation to "+ players[i].name + "<"+ players[i].email +">\n", clientIndex);
-                    players[i].invitation[players[clientIndex].inRoomId] = clientIndex;
-                    masterTCPSocket->SendMessage("You receive invitation from "+ players[clientIndex].name + "<"+ players[clientIndex].email +">\n", i);
-                    return;
-                }
-                else{
-                    masterTCPSocket->SendMessage("Invitee not logged in\n", clientIndex);
-                    return;
-                }
+                masterTCPSocket->SendMessage("You send invitation to "+ players[i].name + "<"+ players[i].email +">\n", clientIndex);
+                players[i].invitation[players[clientIndex].inRoomId] = clientIndex;
+                masterTCPSocket->SendMessage("You receive invitation from "+ players[clientIndex].name + "<"+ players[clientIndex].email +">\n", i);
+                return;
             }
-            
         }
+        masterTCPSocket->SendMessage("Invitee not logged in\n", clientIndex);
+        return;
     }
     void ListInvitations(int clientIndex){
         if(players[clientIndex].name == "") {
@@ -780,11 +774,11 @@ private:
         if(room->GameManager == clientIndex){
             masterTCPSocket->SendMessage("You leave game room " + players[clientIndex].inRoomId + "\n", clientIndex);
             rooms.erase(players[clientIndex].inRoomId);
-            players[clientIndex].inRoomId = "";
             for(int player : room->players){
                 masterTCPSocket->SendMessage("Game room manager leave game room " + players[clientIndex].inRoomId + ", you are forced to leave too\n", player);
                 players[clientIndex].inRoomId = "";
             }
+            players[clientIndex].inRoomId = "";
             delete(room);
             return;
         }
